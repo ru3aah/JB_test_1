@@ -1,3 +1,4 @@
 credentials.py
 tasks.md
 *.env
+.idea
