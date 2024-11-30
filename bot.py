@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, ContextTypes
 
+from config import GPT_TOKEN, TG_TOKEN
 from gpt import ChatGptService
 from util import (load_message, send_text, send_image, show_main_menu,
                   default_callback_handler)
@@ -22,8 +23,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     })
 
 
-chat_gpt = ChatGptService('ChatGPT TOKEN')
-app = ApplicationBuilder().token('Telegram TOKEN').build()
+chat_gpt = ChatGptService(GPT_TOKEN)
+app = ApplicationBuilder().token(TG_TOKEN).build()
 
 # Зарегистрировать обработчик команды можно так:
 # app.add_handler(CommandHandler('command', handler_func))
