@@ -1,6 +1,5 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, ContextTypes
-
 from config import GPT_TOKEN, TG_TOKEN
 from gpt import ChatGptService
 from util import (load_message, send_text, send_image, show_main_menu,
