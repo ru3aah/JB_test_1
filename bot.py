@@ -18,7 +18,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'quiz': 'Поучаствовать в квизе ❓'
         # Добавить команду в меню можно так:
         # 'command': 'button text'
-
     })
 
 
