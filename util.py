@@ -15,6 +15,10 @@ def dialog_user_info_to_str(user_data) -> str:
 # посылает в чат текстовое сообщение
 async def send_text(update: Update, context: ContextTypes.DEFAULT_TYPE,
                     text: str) -> Message:
+    """
+
+    :rtype: object
+    """
     if text.count('_') % 2 != 0:
         message = f"Строка '{text}' является невалидной с точки зрения markdown. Воспользуйтесь методом send_html()"
         print(message)
@@ -82,7 +86,7 @@ def load_message(name):
         return file.read()
 
 
-# загружает промпт из папки  /resources/messages/
+# загружает промпт из папки  /resources/prompts/
 def load_prompt(name):
     with open("resources/prompts/" + name + ".txt", "r",
               encoding="utf8") as file:
@@ -93,8 +97,20 @@ async def default_callback_handler(update: Update,
                                    context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()
     query = update.callback_query.data
-    await send_html(update, context, f'You have pressed button with {query} callback')
+    await send_html(update, context,
+                    f"You have pressed button with {query} callback")
 
+
+#main menu command handler
+
+#async def com_handler(update: Update, context: ContextTypes.DEFAULT_TYPE,
+#                     user_choice):
+#    chat_gpt = ChatGptService(GPT_TOKEN)
+#    await send_image(update, context, user_choice)
+#    await send_text(update,context, load_message(user_choice))
+#    chat_gpt.set_prompt(load_prompt(user_choice))
+#    await update.message.reply_text(await chat_gpt.send_message_list())
+#
 
 class Dialog:
     pass

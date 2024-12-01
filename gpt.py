@@ -1,10 +1,12 @@
+from socket import fromfd
+
 from openai import OpenAI
 import httpx as httpx
-
 
 class ChatGptService:
     client: OpenAI = None
     message_list: list = None
+
 
     def __init__(self, token):
         token = "sk-proj-" + token[:3:-1] if token.startswith('gpt:') else token
