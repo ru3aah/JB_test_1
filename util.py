@@ -2,8 +2,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, \
     BotCommand, MenuButtonCommands, BotCommandScopeChat, MenuButtonDefault
 from telegram import Update
 from telegram.constants import ParseMode
-from telegram.ext import ContextTypes
-
+from telegram.ext import ContextTypes, ConversationHandler
 
 # конвертирует объект user в строку
 def dialog_user_info_to_str(user_data) -> str:
@@ -93,25 +92,14 @@ def load_prompt(name):
         return file.read()
 
 
+# default callback handler
 async def default_callback_handler(update: Update,
                                    context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()
     query = update.callback_query.data
-
     await send_html(update, context,
                     f"You have pressed button with {query} callback")
 
-
-#main menu command handler
-
-#async def com_handler(update: Update, context: ContextTypes.DEFAULT_TYPE,
-#                     user_choice):
-#    chat_gpt = ChatGptService(GPT_TOKEN)
-#    await send_image(update, context, user_choice)
-#    await send_text(update,context, load_message(user_choice))
-#    chat_gpt.set_prompt(load_prompt(user_choice))
-#    await update.message.reply_text(await chat_gpt.send_message_list())
-#
 
 class Dialog:
     pass
