@@ -1,8 +1,6 @@
 import logging
 
-from openai import models, azure_endpoint
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram._utils import markup
+from telegram import Update
 from telegram.ext import (ApplicationBuilder, CallbackQueryHandler,
                           ContextTypes, CommandHandler )
 from config import TG_TOKEN, GPT_TOKEN
@@ -19,7 +17,7 @@ logging.basicConfig(
 
 #commands
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data.['usr_choice'] = 'main'
+    context.user_data['usr_choice'] = 'main'
     await send_image(update, context, context.user_data.get('usr_choice'))
     await send_text(update, context, load_message(context.user_data.get('usr_choice')))
     await show_main_menu(update, context, {
