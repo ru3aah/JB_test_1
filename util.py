@@ -41,8 +41,8 @@ async def send_html(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 
 # посылает в чат текстовое сообщение, и добавляет к нему кнопки
-async def send_text_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE,
-                            text: str, buttons: dict) -> Message:
+async def send_text_buttons(update: Update, context:
+ContextTypes.DEFAULT_TYPE, text: str, buttons: dict) -> Message:
     text = text.encode('utf16', errors='surrogatepass').decode('utf16')
     keyboard = []
     for key, value in buttons.items():
