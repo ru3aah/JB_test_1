@@ -60,11 +60,14 @@ async def gpt_talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_image(update, context, context.user_data.get('usr_choice'))
     await send_text(update, context, text)
 
+
 async def gpt_dialog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     request = update.message.text
     message = await send_text(update, context, 'Thinking...')
     answer = await chat_gpt.add_message(request)
-    await message.edit_text(answer)
+    await message.delete()
+    await send_text_buttons(update, context, answer, buttons={'stop':
+                                                                  'Завершить'})
 
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -75,8 +78,6 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await start(update, context)
         case 'gpt':
             await gpt_dialog(update, context)
-
-
 
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -96,7 +97,6 @@ app.add_handler(CommandHandler('gpt', gpt_talk))
 
 # Callback Handlers
 app.add_handler(CallbackQueryHandler(random_buttons, pattern='random_more'))
-#app.add_handler(CallbackQueryHandler(gpt_buttons, pattern='gpt_.*'))
 app.add_handler(CallbackQueryHandler(stop, pattern='stop'))
 app.add_handler(CallbackQueryHandler(default_callback_handler))
 
