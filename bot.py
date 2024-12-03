@@ -95,10 +95,6 @@ async def talk_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_text(update, context, greet)
 
 
-async def talk_dialog(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    pass
-
-
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     match context.user_data.get('usr_choice'):
         case 'main':
@@ -134,6 +130,7 @@ app.add_handler(CallbackQueryHandler(stop, pattern='stop'))
 app.add_handler(CallbackQueryHandler(default_callback_handler))
 
 #Message Handlers
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,
+                               message_handler))
 
 app.run_polling()
