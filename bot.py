@@ -1,4 +1,6 @@
 import logging
+from dataclasses import dataclass
+from gettext import textdomain
 
 from telegram import Update
 from telegram.ext import (ApplicationBuilder, CallbackQueryHandler,
@@ -69,6 +71,33 @@ async def gpt_dialog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_text_buttons(update, context, answer, buttons={'stop':
                                                                   'Завершить'})
 
+async def talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['usr_choice'] = 'talk'
+    text = load_message(context.user_data.get('usr_choice'))
+    await send_image(update, context, context.user_data.get('usr_choice'))
+    await send_text_buttons(update, context, text, buttons={
+        'talk_cobain': 'Курт Кобейн',
+        'talk_hawking': 'Стивен Хокинг',
+        'talk_nietzche': 'Фридрих Ницше',
+        'talk_queen': 'Елизавета II',
+        'talk_tolkien': 'Джон Толкиен'
+    })
+
+
+async def talk_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.user_data.get('usr_choice') != 'talk':
+        return
+    await update.callback_query.answer()
+    data = update.callback_query.data
+    chat_gpt.set_prompt(load_prompt(data))
+    await send_image(update, context, data)
+    greet = await chat_gpt.add_message('Поздоровайся со мной')
+    await send_text(update, context, greet)
+
+
+async def talk_dialog(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    pass
+
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     match context.user_data.get('usr_choice'):
@@ -77,6 +106,8 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         case 'random':
             await start(update, context)
         case 'gpt':
+            await gpt_dialog(update, context)
+        case 'talk':
             await gpt_dialog(update, context)
 
 
@@ -93,10 +124,12 @@ chat_gpt = ChatGptService(GPT_TOKEN)
 app.add_handler(CommandHandler('start', start))
 app.add_handler(CommandHandler('random', random_fact))
 app.add_handler(CommandHandler('gpt', gpt_talk))
+app.add_handler(CommandHandler('talk', talk))
 
 
 # Callback Handlers
 app.add_handler(CallbackQueryHandler(random_buttons, pattern='random_more'))
+app.add_handler(CallbackQueryHandler(talk_buttons, pattern='talk_.*'))
 app.add_handler(CallbackQueryHandler(stop, pattern='stop'))
 app.add_handler(CallbackQueryHandler(default_callback_handler))
 
