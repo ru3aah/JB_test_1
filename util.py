@@ -19,7 +19,10 @@ async def send_text(update: Update, context: ContextTypes.DEFAULT_TYPE,
     :rtype: object
     """
     if text.count('_') % 2 != 0:
-        message = f"Строка '{text}' является невалидной с точки зрения markdown. Воспользуйтесь методом send_html()"
+        message = (f"Строка '{text}' "
+                   f"является невалидной с точки зрения markdown."
+                   f" Воспользуйтесь методом send_html()"\
+                   )
         print(message)
         return await update.message.reply_text(message)
 
