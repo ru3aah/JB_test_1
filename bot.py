@@ -1,5 +1,4 @@
 import logging
-from multiprocessing.connection import answer_challenge
 
 from openai import models, azure_endpoint
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
@@ -20,9 +19,9 @@ logging.basicConfig(
 
 #commands
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = load_message('main')
-    await send_image(update, context, 'main')
-    await send_text(update, context, text)
+    context.user_data.['usr_choice'] = 'main'
+    await send_image(update, context, context.user_data.get('usr_choice'))
+    await send_text(update, context, load_message(context.user_data.get('usr_choice')))
     await show_main_menu(update, context, {
         'start': 'Главное меню',
         'random': 'Узнать случайный интересный факт 🧠',
