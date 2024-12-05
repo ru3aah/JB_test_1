@@ -123,5 +123,4 @@ async def gpt_dialog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = await send_text(update, context, 'Thinking...')
     answer = await chat_gpt.add_message(request)
     await message.delete()
-    await send_text_buttons(update, context, answer, buttons={'stop':
-                                                                  'Завершить'})
+    await send_text_buttons(update, context, answer, 'gpt_dialog')
