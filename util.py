@@ -1,8 +1,12 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, \
-    BotCommand, MenuButtonCommands, BotCommandScopeChat, MenuButtonDefault
+    BotCommand, MenuButtonCommands, BotCommandScopeChat, MenuButtonDefault, \
+    Update
 from telegram import Update
 from telegram.constants import ParseMode
-from telegram.ext import ContextTypes, ConversationHandler
+from telegram.ext import ContextTypes
+
+from config import chat_gpt
+
 
 # конвертирует объект user в строку
 def dialog_user_info_to_str(user_data) -> str:
@@ -106,3 +110,12 @@ async def default_callback_handler(update: Update,
 
 class Dialog:
     pass
+
+
+async def gpt_dialog(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    request = update.message.text
+    message = await send_text(update, context, 'Thinking...')
+    answer = await chat_gpt.add_message(request)
+    await message.delete()
+    await send_text_buttons(update, context, answer, buttons={'stop':
+                                                                  'Завершить'})

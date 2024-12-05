@@ -3,21 +3,22 @@ from telegram.ext import (CallbackQueryHandler,
                           ContextTypes, CommandHandler, MessageHandler, filters,
                           ConversationHandler)
 
-from bot import chat_gpt, app
+from bot import chat_gpt
 from util import send_image, load_prompt, send_text_buttons, send_text
 
+CHOOSE_THEME, DIFF, ANSWER = range(3)
 
 async def quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['usr_choice'] = 'quiz'
     context.user_data['score'] = 0
-    await send_image(update, context, context.user_data.get('usr_choice'))
     chat_gpt.set_prompt(load_prompt(context.user_data.get('usr_choice')))
+    await send_image(update, context, context.user_data.get('usr_choice'))
     await send_text_buttons(update, context, 'Выбери тему', buttons={
         'quiz_prog': 'Программирование',
         'quiz_math': 'Математика',
         'quiz_biology': 'Биология'
     })
-    return THEME
+    return CHOOSE_THEME
 
 
 async def quiz_theme(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -46,16 +47,15 @@ async def quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-THEME, DIFF, ANSWER = range(3)
 app.add_handler(ConversationHandler(
     entry_points=[CommandHandler('quiz', quiz)],
     states={
-        THEME: [CallbackQueryHandler(quiz_theme, pattern='^quiz_.*')],
+        CHOOSE_THEME: [CallbackQueryHandler(quiz_theme, pattern='^quiz_.*')],
         DIFF: [CallbackQueryHandler(quiz_diff, pattern='^diff_.*')],
         ANSWER: [MessageHandler(filters.TEXT & ~filters.COMMAND,
                                 quiz_answer), CallbackQueryHandler(
-            quiz_theme, pattern='quiz_more'), CallbackQueryHandler(quiz,
-                                                                   pattern='quiz_change'),
+            quiz_theme, pattern='quiz_more'),
+                 CallbackQueryHandler(quiz, pattern='quiz_change'),
                  CallbackQueryHandler(stop, pattern='stop'),
                  CallbackQueryHandler(quiz_theme, pattern='quiz_more')]
     },

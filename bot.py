@@ -1,14 +1,15 @@
 import logging
-import quiz
 
 from telegram import Update
 from telegram.ext import (ApplicationBuilder, CallbackQueryHandler,
-                          ContextTypes, CommandHandler, MessageHandler, filters,
-                          ConversationHandler)
-from config import TG_TOKEN, GPT_TOKEN
-from gpt import ChatGptService
+                          ContextTypes, CommandHandler, MessageHandler, filters)
+
+import quiz
+from config import TG_TOKEN
+from config import chat_gpt
 from util import (load_message, send_text, send_image, show_main_menu,
-                  default_callback_handler, load_prompt, send_text_buttons)
+                  default_callback_handler, load_prompt, send_text_buttons,
+                  gpt_dialog)
 
 # logging setup
 logging.basicConfig(
@@ -65,14 +66,6 @@ async def gpt_talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_text(update, context, text)
 
 
-#dialog with gpt
-async def gpt_dialog(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    request = update.message.text
-    message = await send_text(update, context, 'Thinking...')
-    answer = await chat_gpt.add_message(request)
-    await message.delete()
-    await send_text_buttons(update, context, answer, buttons={'stop':
-                                                                  'Завершить'})
 #talk to the famous person
 async def talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['usr_choice'] = 'talk'
@@ -81,7 +74,7 @@ async def talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_text_buttons(update, context, text, buttons={
         'talk_cobain': 'Курт Кобейн',
         'talk_hawking': 'Стивен Хокинг',
-        'talk_nietzche': 'Фридрих Ницше',
+        'talk_nietzsche': 'Фридрих Ницше',
         'talk_queen': 'Елизавета II',
         'talk_tolkien': 'Джон Толкиен'
     })
@@ -117,7 +110,6 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 app = ApplicationBuilder().token(TG_TOKEN).build()
-chat_gpt = ChatGptService(GPT_TOKEN)
 
 
 # Command Handlers
