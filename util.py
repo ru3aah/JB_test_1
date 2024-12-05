@@ -1,3 +1,5 @@
+from os import linesep
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, \
     BotCommand, MenuButtonCommands, BotCommandScopeChat, MenuButtonDefault, \
     Update
@@ -46,9 +48,17 @@ async def send_html(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 # посылает в чат текстовое сообщение, и добавляет к нему кнопки
 async def send_text_buttons(update: Update, context:
-ContextTypes.DEFAULT_TYPE, text: str, buttons: dict) -> Message:
+ContextTypes.DEFAULT_TYPE, text: str, usr_choice: str) -> Message:
     text = text.encode('utf16', errors='surrogatepass').decode('utf16')
     keyboard = []
+    with open(f'resources/Menus/{usr_choice}', 'rb') as file:
+        lines = file.read().splitlines()
+
+        buttons = {}
+        for line in lines:
+            key, value = line.decode().split(': ')
+            buttons.update({key: value})
+
     for key, value in buttons.items():
         button = InlineKeyboardButton(str(value), callback_data=str(key))
         keyboard.append([button])
@@ -106,10 +116,6 @@ async def default_callback_handler(update: Update,
     query = update.callback_query.data
     await send_html(update, context,
                     f"You have pressed button with {query} callback")
-
-
-class Dialog:
-    pass
 
 
 async def gpt_dialog(update: Update, context: ContextTypes.DEFAULT_TYPE):
