@@ -106,17 +106,6 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await start(update, context)
 
 
-
-#quiz level 1 - choose the theme
-async def quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['usr_choice'] = 'quiz'
-    context.user_data['score'] = 0
-    chat_gpt.set_prompt(load_prompt(context.user_data.get('usr_choice')))
-    await send_image(update, context, context.user_data.get('usr_choice'))
-    await send_text_buttons(update, context, 'Выбери тему',
-                            context.user_data['usr_choice'])
-
-
 app = ApplicationBuilder().token(TG_TOKEN).build()
 
 
@@ -145,9 +134,10 @@ CHOOSE_THEME, ASK_QUESTION, HANDLE_ANSWER, MENU_OPTIONS = range(4)
 # Asynchronous functions to support the conversation
 
 async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Начальное меню"""
+    """Начальное меню квиза"""
     context.user_data['usr_choice'] = 'quiz'
-    chat_gpt.set_prompt(await load_prompt(context.user_data['usr_choice']))
+    prompt = load_prompt(context.user_data['usr_choice'])
+    chat_gpt.set_prompt(prompt)
     context.user_data['score'] = 0
     await send_image(update, context, context.user_data['usr_choice'])
     await send_text_buttons(update, context, load_message(
@@ -157,13 +147,13 @@ async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def choose_theme(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обрабатывает выбор темы """
+    await update.callback_query.answer()
     context.user_data['chosen_theme'] = update.callback_query.data
-    await send_text(update, context, context.user_data['chosen_theme'])
     return await ask_question(update, context)
 
 
 async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """генерирует и задает вопрос"""
+    """Генерирует и задает вопрос"""
     question = await chat_gpt.add_message(context.user_data['chosen_theme'])
     await send_text(update, context, question)
     return HANDLE_ANSWER
@@ -172,7 +162,6 @@ async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Evaluate the user's answer and present options for the next step"""
     if not update.message or not update.message.text:
-        await send_text(update, context, "Введите текстовый ответ.")
         return HANDLE_ANSWER
     user_answer = update.message.text
     evaluation_message = await chat_gpt.add_message(user_answer)
@@ -207,10 +196,11 @@ async def menu_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
 app.add_handler(ConversationHandler(
     entry_points=[CommandHandler('quiz', start_quiz)],
     states={
-        CHOOSE_THEME: [CallbackQueryHandler(choose_theme, pattern='^quiz_.*')],
+        CHOOSE_THEME: [CallbackQueryHandler(choose_theme)],
         ASK_QUESTION: [MessageHandler(filters.TEXT & ~filters.COMMAND,
                                       ask_question)],
-        HANDLE_ANSWER: [MessageHandler(filters.TEXT, handle_answer)],
+        HANDLE_ANSWER: [MessageHandler(filters.TEXT & ~filters.COMMAND,
+                                       handle_answer)],
         MENU_OPTIONS: [CallbackQueryHandler(menu_options,
                                             pattern='^next_question_options')]
     },
