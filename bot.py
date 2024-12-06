@@ -1,6 +1,7 @@
 import logging
 from random import choice
 
+import bot
 from platformdirs import user_runtime_dir
 from telegram import Update
 from telegram.ext import (ApplicationBuilder, CallbackQueryHandler,
@@ -71,7 +72,6 @@ async def talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['usr_choice'] = 'talk'
     text = load_message(context.user_data['usr_choice'])
     await send_image(update, context, context.user_data['usr_choice'])
-    print(context.user_data['usr_choice'])
     await send_text_buttons(update, context, text,
                             context.user_data['usr_choice'])
 
@@ -121,9 +121,7 @@ app.add_handler(CallbackQueryHandler(random_buttons, pattern='random_more'))
 app.add_handler(CallbackQueryHandler(talk_buttons, pattern='^talk_.*'))
 app.add_handler(CallbackQueryHandler(stop, pattern='stop'))
 
-#Message Handlers
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,
-                               message_handler))
+
 
 # Conversation handler for quiz command
 
@@ -156,14 +154,20 @@ async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Генерирует и задает вопрос"""
     question = await chat_gpt.add_message(context.user_data['chosen_theme'])
     await send_text(update, context, question)
+    bot.Update.effective_chat()
     return HANDLE_ANSWER
 
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Evaluate the user's answer and present options for the next step"""
+    """Принимает и оценивает ответ, предлагает выбор дальше"""
+    message = await send_text(update, context, 'Хммм....')
+
     if not update.message or not update.message.text:
         return HANDLE_ANSWER
+
     user_answer = update.message.text
+    print(user_answer)
+    await message.delete()
     evaluation_message = await chat_gpt.add_message(user_answer)
 
     if "Правильно!" in evaluation_message:
@@ -206,7 +210,10 @@ app.add_handler(ConversationHandler(
     },
     fallbacks=[CommandHandler('stop', stop)]))
 
-
+#Message Handlers
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,
+                               message_handler))
+#Default CallBack handler
 app.add_handler(CallbackQueryHandler(default_callback_handler))
 
 app.run_polling()
