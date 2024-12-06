@@ -1,8 +1,5 @@
 import logging
-from random import choice
 
-import bot
-from platformdirs import user_runtime_dir
 from telegram import Update
 from telegram.ext import (ApplicationBuilder, CallbackQueryHandler,
                           ContextTypes, CommandHandler, MessageHandler, filters,
@@ -124,13 +121,10 @@ app.add_handler(CallbackQueryHandler(stop, pattern='stop'))
 
 
 # Conversation handler for quiz command
-
-# Constants for the state of the conversation
 CHOOSE_THEME, ASK_QUESTION, HANDLE_ANSWER, MENU_OPTIONS = range(4)
 
 
-# Asynchronous functions to support the conversation
-
+# Quiz functions
 async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начальное меню квиза"""
     context.user_data['usr_choice'] = 'quiz'
@@ -154,63 +148,54 @@ async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Генерирует и задает вопрос"""
     question = await chat_gpt.add_message(context.user_data['chosen_theme'])
     await send_text(update, context, question)
-    bot.Update.effective_chat()
     return HANDLE_ANSWER
 
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Принимает и оценивает ответ, предлагает выбор дальше"""
-    message = await send_text(update, context, 'Хммм....')
-
-    if not update.message or not update.message.text:
+    if not update.message.text:
         return HANDLE_ANSWER
-
     user_answer = update.message.text
-    print(user_answer)
-    await message.delete()
     evaluation_message = await chat_gpt.add_message(user_answer)
-
     if "Правильно!" in evaluation_message:
         context.user_data['score'] += 1
-
     await send_text(update, context, evaluation_message)
     await send_text_buttons(update, context,
                             f'Правильных ответов: '
-                            f'{context.user_data["score"]}\n' 
+                            f'{context.user_data['score']}\n' 
                             'Что вы хотите делать дальше?',
-                            'next_question_options')
+                            'quiz_answer_options')
     return MENU_OPTIONS
 
 
 async def menu_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle user choice to answer another question, change, or end quiz"""
+    """Обрабатывает выбор пользователя во внутреннем меню квиза"""
+
     await update.callback_query.answer()
     selected_option = update.callback_query.data
-
-    if selected_option == 'another_question':
-        return await ask_question(update, context)
-    elif selected_option == 'change_theme':
-        return await start_quiz(update, context)
-    else:  # End quiz
-        await send_text(update, context, "Спасибо за участие в квизе!")
-        return ConversationHandler.END
+    if selected_option == 'quiz_more':
+        return ASK_QUESTION
+    elif selected_option == 'quiz_change':
+        return CHOOSE_THEME
+    await send_text(update, context, "Спасибо за участие в квизе!")
+    return ConversationHandler.END
 
 
 # Adding the quiz conversation handler to the application
 app.add_handler(ConversationHandler(
     entry_points=[CommandHandler('quiz', start_quiz)],
     states={
-        CHOOSE_THEME: [CallbackQueryHandler(choose_theme)],
+        CHOOSE_THEME: [CallbackQueryHandler(choose_theme, pattern='^quiz_.*')],
         ASK_QUESTION: [MessageHandler(filters.TEXT & ~filters.COMMAND,
                                       ask_question)],
         HANDLE_ANSWER: [MessageHandler(filters.TEXT & ~filters.COMMAND,
                                        handle_answer)],
         MENU_OPTIONS: [CallbackQueryHandler(menu_options,
-                                            pattern='^next_question_options')]
+                                            pattern='^quiz_.*')]
     },
-    fallbacks=[CommandHandler('stop', stop)]))
+    fallbacks=[CommandHandler('stop', start)]))
 
-#Message Handlers
+#Message Handler
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,
                                message_handler))
 #Default CallBack handler
