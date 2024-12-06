@@ -19,7 +19,7 @@ logging.getLogger('httpx').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-# Сommands
+# Commands
 # start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Выводит главное меню"""

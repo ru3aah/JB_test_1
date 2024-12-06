@@ -121,7 +121,7 @@ async def default_callback_handler(update: Update,
 #интерфейс с chat gpt
 async def gpt_dialog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ Принимает сообщение пользователя,
-     дополняет им запрос  к chat gpt с заранее установленным промптом,
+     дополняет им запрос к chat gpt с заранее установленным промптом,
      получает на него ответ и выводит его с меню"""
 
     request = update.message.text

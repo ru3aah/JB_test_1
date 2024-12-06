@@ -1,7 +1,6 @@
-from socket import fromfd
-
-from openai import OpenAI
 import httpx as httpx
+from openai import OpenAI
+
 
 class ChatGptService:
     client: OpenAI = None
