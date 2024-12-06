@@ -1,9 +1,10 @@
 import logging
 
-from telegram import Update, CallbackQuery
+from telegram import Update
 from telegram.ext import (ApplicationBuilder, CallbackQueryHandler,
                           ContextTypes, CommandHandler, MessageHandler, filters,
                           ConversationHandler)
+
 from config import TG_TOKEN
 from config import chat_gpt
 from util import (load_message, send_text, send_image, show_main_menu,
@@ -100,7 +101,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
-    #await update.callback_query.answer()
+    await update.callback_query.answer()
     await start(update, context)
 
 
@@ -127,7 +128,7 @@ CHOOSE_THEME, ASK_QUESTION, HANDLE_ANSWER, MENU_OPTIONS = range(4)
 
 # Quiz functions
 async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Начальное меню квиза"""
+    """Начальный кадр квиза"""
     context.user_data['usr_choice'] = 'quiz'
     context.user_data['prompt'] = load_prompt(context.user_data['usr_choice'])
     context.user_data['score'] = 0
@@ -137,9 +138,11 @@ async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return CHOOSE_THEME
 
 async def ask_theme(update, context):
+    """CallBackQueryHandler с кнопками выбора тем"""
     await send_text_buttons(update, context, load_message(
         context.user_data['usr_choice']), context.user_data['usr_choice'])
     return CHOOSE_THEME
+
 
 async def choose_theme(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обрабатывает выбор темы """
@@ -211,6 +214,8 @@ app.add_handler(ConversationHandler(
 #Message Handler
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,
                                message_handler))
+
+
 #Default CallBack handler
 app.add_handler(CallbackQueryHandler(default_callback_handler))
 
