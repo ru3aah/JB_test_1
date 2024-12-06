@@ -1,6 +1,9 @@
 import logging
+from ctypes.wintypes import HANDLE
+from email.policy import default
+from lib2to3.fixes.fix_input import context
 
-from telegram import Update
+from telegram import Update, CallbackQuery
 from telegram.ext import (ApplicationBuilder, CallbackQueryHandler,
                           ContextTypes, CommandHandler, MessageHandler, filters,
                           ConversationHandler)
@@ -99,6 +102,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data.clear()
     await update.callback_query.answer()
     await start(update, context)
 
@@ -128,33 +132,42 @@ CHOOSE_THEME, ASK_QUESTION, HANDLE_ANSWER, MENU_OPTIONS = range(4)
 async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начальное меню квиза"""
     context.user_data['usr_choice'] = 'quiz'
-    prompt = load_prompt(context.user_data['usr_choice'])
-    chat_gpt.set_prompt(prompt)
+    context.user_data['prompt'] = load_prompt(context.user_data['usr_choice'])
+    #prompt = load_prompt(context.user_data['usr_choice'])
+    #chat_gpt.set_prompt(prompt)
     context.user_data['score'] = 0
     await send_image(update, context, context.user_data['usr_choice'])
+    await ask_theme(update, context)
+    return CHOOSE_THEME
+
+async def ask_theme(update, context):
     await send_text_buttons(update, context, load_message(
         context.user_data['usr_choice']), context.user_data['usr_choice'])
     return CHOOSE_THEME
 
-
 async def choose_theme(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обрабатывает выбор темы """
+    #await send_text_buttons(update, context, load_message(
+        #context.user_data['usr_choice']), context.user_data['usr_choice'])
+
     await update.callback_query.answer()
     context.user_data['chosen_theme'] = update.callback_query.data
-    return await ask_question(update, context)
+    await ask_question(update, context)
+    return HANDLE_ANSWER
 
 
 async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Генерирует и задает вопрос"""
-    question = await chat_gpt.add_message(context.user_data['chosen_theme'])
+#await update.callback_query.answer()
+    question = await chat_gpt.send_question(context.user_data[
+                                                'prompt'],  context.user_data[
+                                                'chosen_theme'])
     await send_text(update, context, question)
     return HANDLE_ANSWER
 
 
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Принимает и оценивает ответ, предлагает выбор дальше"""
-    if not update.message.text:
-        return HANDLE_ANSWER
     user_answer = update.message.text
     evaluation_message = await chat_gpt.add_message(user_answer)
     if "Правильно!" in evaluation_message:
@@ -162,7 +175,7 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_text(update, context, evaluation_message)
     await send_text_buttons(update, context,
                             f'Правильных ответов: '
-                            f'{context.user_data['score']}\n' 
+                            f'{context.user_data['score']}\n'
                             'Что вы хотите делать дальше?',
                             'quiz_answer_options')
     return MENU_OPTIONS
@@ -173,11 +186,14 @@ async def menu_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.callback_query.answer()
     selected_option = update.callback_query.data
+    print(selected_option)
     if selected_option == 'quiz_more':
-        return ASK_QUESTION
+        return await ask_question(update, context)
     elif selected_option == 'quiz_change':
-        return CHOOSE_THEME
-    await send_text(update, context, "Спасибо за участие в квизе!")
+        return await ask_theme(update, context)
+
+    await send_text(update, context, 'Спасибо за участие в квизе!')
+    context.user_data.clear()
     return ConversationHandler.END
 
 
@@ -185,15 +201,17 @@ async def menu_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
 app.add_handler(ConversationHandler(
     entry_points=[CommandHandler('quiz', start_quiz)],
     states={
-        CHOOSE_THEME: [CallbackQueryHandler(choose_theme, pattern='^quiz_.*')],
+        CHOOSE_THEME: [CallbackQueryHandler(choose_theme,
+                                            pattern='^quiz_.*'),
+                       CallbackQueryHandler(ask_theme, pattern='^quiz_.*')],
         ASK_QUESTION: [MessageHandler(filters.TEXT & ~filters.COMMAND,
                                       ask_question)],
         HANDLE_ANSWER: [MessageHandler(filters.TEXT & ~filters.COMMAND,
-                                       handle_answer)],
-        MENU_OPTIONS: [CallbackQueryHandler(menu_options,
-                                            pattern='^quiz_.*')]
+                                       handle_answer),
+                        CallbackQueryHandler(menu_options, pattern='^quiz_.*')],
+        MENU_OPTIONS: [CallbackQueryHandler(menu_options, pattern='^quiz_.*')]
     },
-    fallbacks=[CommandHandler('stop', start)]))
+    fallbacks=[CommandHandler('stop', stop)]))
 
 #Message Handler
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,

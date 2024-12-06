@@ -49,6 +49,10 @@ async def send_html(update: Update, context: ContextTypes.DEFAULT_TYPE,
 # посылает в чат текстовое сообщение, и добавляет к нему кнопки
 async def send_text_buttons(update: Update, context:
 ContextTypes.DEFAULT_TYPE, text: str, usr_choice: str) -> Message:
+    """
+
+    :rtype: object
+    """
     text = text.encode('utf16', errors='surrogatepass').decode('utf16')
     keyboard = []
     with open(f'resources/Menus/{usr_choice}', 'rb') as file:
