@@ -1,7 +1,4 @@
 import logging
-from ctypes.wintypes import HANDLE
-from email.policy import default
-from lib2to3.fixes.fix_input import context
 
 from telegram import Update, CallbackQuery
 from telegram.ext import (ApplicationBuilder, CallbackQueryHandler,
@@ -103,7 +100,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
-    await update.callback_query.answer()
+    #await update.callback_query.answer()
     await start(update, context)
 
 
@@ -183,7 +180,6 @@ async def menu_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.callback_query.answer()
     selected_option = update.callback_query.data
-    print(selected_option)
     if selected_option == 'quiz_more':
         return await ask_question(update, context)
     elif selected_option == 'quiz_change':
