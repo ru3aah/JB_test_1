@@ -1,4 +1,5 @@
 import logging
+from random import choice
 
 from platformdirs import user_runtime_dir
 from telegram import Update
@@ -105,7 +106,7 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await start(update, context)
 
 
-CHOOSE_THEME, ANSWER = range(2)
+
 #quiz level 1 - choose the theme
 async def quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['usr_choice'] = 'quiz'
@@ -114,33 +115,6 @@ async def quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_image(update, context, context.user_data.get('usr_choice'))
     await send_text_buttons(update, context, 'Выбери тему',
                             context.user_data['usr_choice'])
-    return CHOOSE_THEME
-
-
-async def quiz_theme(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.callback_query.answer()
-    question = await chat_gpt.add_message(update.callback_query.data)
-    await send_text(update, context, question)
-    print('I m here 1')
-    return ANSWER
-
-
-async def quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print('I am here 2')
-    if not update.message or not update.message.text:
-        await send_text(update, context, "Введите текстовый ответ.")
-        return ANSWER
-    text = update.message.text
-    answer = await chat_gpt.add_message(text)
-    if answer == 'Правильно!':
-        context.user_data['score'] = context.user_data.get('score', 0) + 1
-    await send_text(update, context, answer)
-    await send_text_buttons(update, context, answer +
-                            '\n правильных ответов: '
-                            + str(context.user_data.get('score', 0)),
-                            'quiz_answer')
-
-    return ConversationHandler.END
 
 
 app = ApplicationBuilder().token(TG_TOKEN).build()
@@ -162,18 +136,86 @@ app.add_handler(CallbackQueryHandler(stop, pattern='stop'))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,
                                message_handler))
 
+# Conversation handler for quiz command
 
-#ConversationHandler
+# Constants for the state of the conversation
+CHOOSE_THEME, ASK_QUESTION, HANDLE_ANSWER, MENU_OPTIONS = range(4)
+
+
+# Asynchronous functions to support the conversation
+
+async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Начальное меню"""
+    context.user_data['usr_choice'] = 'quiz'
+    chat_gpt.set_prompt(await load_prompt(context.user_data['usr_choice']))
+    context.user_data['score'] = 0
+    await send_image(update, context, context.user_data['usr_choice'])
+    await send_text_buttons(update, context, load_message(
+        context.user_data['usr_choice']), context.user_data['usr_choice'])
+    return CHOOSE_THEME
+
+
+async def choose_theme(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обрабатывает выбор темы """
+    context.user_data['chosen_theme'] = update.callback_query.data
+    await send_text(update, context, context.user_data['chosen_theme'])
+    return await ask_question(update, context)
+
+
+async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """генерирует и задает вопрос"""
+    question = await chat_gpt.add_message(context.user_data['chosen_theme'])
+    await send_text(update, context, question)
+    return HANDLE_ANSWER
+
+
+async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Evaluate the user's answer and present options for the next step"""
+    if not update.message or not update.message.text:
+        await send_text(update, context, "Введите текстовый ответ.")
+        return HANDLE_ANSWER
+    user_answer = update.message.text
+    evaluation_message = await chat_gpt.add_message(user_answer)
+
+    if "Правильно!" in evaluation_message:
+        context.user_data['score'] += 1
+
+    await send_text(update, context, evaluation_message)
+    await send_text_buttons(update, context,
+                            f'Правильных ответов: '
+                            f'{context.user_data["score"]}\n' 
+                            'Что вы хотите делать дальше?',
+                            'next_question_options')
+    return MENU_OPTIONS
+
+
+async def menu_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle user choice to answer another question, change, or end quiz"""
+    await update.callback_query.answer()
+    selected_option = update.callback_query.data
+
+    if selected_option == 'another_question':
+        return await ask_question(update, context)
+    elif selected_option == 'change_theme':
+        return await start_quiz(update, context)
+    else:  # End quiz
+        await send_text(update, context, "Спасибо за участие в квизе!")
+        return ConversationHandler.END
+
+
+# Adding the quiz conversation handler to the application
 app.add_handler(ConversationHandler(
-    entry_points=[CommandHandler('quiz', quiz)],
+    entry_points=[CommandHandler('quiz', start_quiz)],
     states={
-        CHOOSE_THEME:
-            [CallbackQueryHandler(quiz_theme, pattern='^quiz_.*')],
-        ANSWER:
-            [MessageHandler(filters.TEXT & ~filters.COMMAND, quiz_answer)]
+        CHOOSE_THEME: [CallbackQueryHandler(choose_theme, pattern='^quiz_.*')],
+        ASK_QUESTION: [MessageHandler(filters.TEXT & ~filters.COMMAND,
+                                      ask_question)],
+        HANDLE_ANSWER: [MessageHandler(filters.TEXT, handle_answer)],
+        MENU_OPTIONS: [CallbackQueryHandler(menu_options,
+                                            pattern='^next_question_options')]
     },
-    fallbacks=[CommandHandler('stop', stop)]
-))
+    fallbacks=[CommandHandler('stop', stop)]))
+
 
 app.add_handler(CallbackQueryHandler(default_callback_handler))
 
