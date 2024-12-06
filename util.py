@@ -1,8 +1,6 @@
-from os import linesep
-
+from certifi import contents
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, \
-    BotCommand, MenuButtonCommands, BotCommandScopeChat, MenuButtonDefault, \
-    Update
+    BotCommand, MenuButtonCommands, BotCommandScopeChat, MenuButtonDefault
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
@@ -27,7 +25,7 @@ async def send_text(update: Update, context: ContextTypes.DEFAULT_TYPE,
     if text.count('_') % 2 != 0:
         message = (f"Строка '{text}' "
                    f"является невалидной с точки зрения markdown."
-                   f" Воспользуйтесь методом send_html()"\
+                   f" Воспользуйтесь методом send_html()"
                    )
         print(message)
         return await update.message.reply_text(message)
@@ -121,10 +119,17 @@ async def default_callback_handler(update: Update,
     await send_html(update, context,
                     f"You have pressed button with {query} callback")
 
-
+#интерфейс с chat gpt
 async def gpt_dialog(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """ Принимает сообщение пользователя,
+     дополняет им запрос  к chat gpt с заранее установленным промптом,
+     получает на него ответ и выводит его с меню"""
+
     request = update.message.text
     message = await send_text(update, context, 'Thinking...')
     answer = await chat_gpt.add_message(request)
     await message.delete()
     await send_text_buttons(update, context, answer, 'gpt_dialog')
+
+
+
