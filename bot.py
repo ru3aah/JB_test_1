@@ -133,9 +133,8 @@ async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Начальное меню квиза"""
     context.user_data['usr_choice'] = 'quiz'
     context.user_data['prompt'] = load_prompt(context.user_data['usr_choice'])
-    #prompt = load_prompt(context.user_data['usr_choice'])
-    #chat_gpt.set_prompt(prompt)
     context.user_data['score'] = 0
+    context.user_data['questions'] = 0
     await send_image(update, context, context.user_data['usr_choice'])
     await ask_theme(update, context)
     return CHOOSE_THEME
@@ -147,9 +146,6 @@ async def ask_theme(update, context):
 
 async def choose_theme(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обрабатывает выбор темы """
-    #await send_text_buttons(update, context, load_message(
-        #context.user_data['usr_choice']), context.user_data['usr_choice'])
-
     await update.callback_query.answer()
     context.user_data['chosen_theme'] = update.callback_query.data
     await ask_question(update, context)
@@ -158,10 +154,10 @@ async def choose_theme(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Генерирует и задает вопрос"""
-#await update.callback_query.answer()
     question = await chat_gpt.send_question(context.user_data[
                                                 'prompt'],  context.user_data[
                                                 'chosen_theme'])
+    context.user_data['questions'] += 1
     await send_text(update, context, question)
     return HANDLE_ANSWER
 
@@ -175,7 +171,8 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_text(update, context, evaluation_message)
     await send_text_buttons(update, context,
                             f'Правильных ответов: '
-                            f'{context.user_data['score']}\n'
+                            f'{context.user_data['score']} из '
+                            f'{context.user_data['questions']}\n'
                             'Что вы хотите делать дальше?',
                             'quiz_answer_options')
     return MENU_OPTIONS
