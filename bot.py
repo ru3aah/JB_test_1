@@ -185,8 +185,10 @@ async def menu_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif selected_option == 'quiz_change':
         return await ask_theme(update, context)
 
+
     await send_text(update, context, 'Спасибо за участие в квизе!')
     context.user_data.clear()
+    await start(update, context)
     return ConversationHandler.END
 
 
