@@ -1,9 +1,10 @@
 import logging
-
 from telegram import Update
 from telegram.ext import (ApplicationBuilder, CallbackQueryHandler,
                           ContextTypes, CommandHandler, MessageHandler, filters,
                           ConversationHandler)
+
+from advice import (advice_conv_handler, ADVICE_CAT, ADVICE_GENRE, ADVICE_PREFS)
 from config import TG_TOKEN
 from config import chat_gpt
 from util import (load_message, send_text, send_image, show_main_menu,
@@ -22,22 +23,27 @@ logger = logging.getLogger(__name__)
 # start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Выводит главное меню"""
+
     context.user_data['usr_choice'] = 'main'
     text = load_message(context.user_data['usr_choice'])
     await send_image(update, context, context.user_data['usr_choice'])
     await send_text(update, context, text)
-    await show_main_menu(update, context, {
+    print('i am here')
+
+    await show_main_menu(update, context,{
         'start': 'Главное меню',
         'random': 'Узнать случайный интересный факт 🧠',
         'gpt': 'Задать вопрос чату GPT 🤖',
         'talk': 'Поговорить с известной личностью 👤',
-        'quiz': 'Поучаствовать в квизе ❓'
+        'quiz': 'Поучаствовать в квизе ❓',
+        'advice': 'Получить совет по выбору фильма, сериала или книги'
     })
 
 
 # message handler
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик выбора пользователя и запуск обработчика"""
+
     match context.user_data.get('usr_choice'):
         case 'main':
             await start(update, context)
@@ -52,6 +58,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # random fact
 async def random_fact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Генерирует случайный факт и показывает его пользователю"""
+
     context.user_data['usr_choice'] = 'random'
     text = load_message(context.user_data['usr_choice'])
     await send_image(update, context, context.user_data['usr_choice'])
@@ -59,13 +66,13 @@ async def random_fact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     prompt = load_prompt(context.user_data['usr_choice'])
     answer = await (chat_gpt.send_question(prompt, ''))
     await send_text_buttons(update, context, answer,
-                            context.user_data['usr_choice']
-                            )
+                            context.user_data['usr_choice'])
 
 
 # CallbackHandler для меню random_fact
 async def random_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик нажатия кнопок в меню random_fact"""
+
     if context.user_data.get('usr_choice') != 'random':
         return
     await update.callback_query.answer()
@@ -75,6 +82,7 @@ async def random_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # gpt talk
 async def gpt_talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Разговор с gpt начало"""
+
     context.user_data['usr_choice'] = 'gpt'
     text = load_message(context.user_data.get('usr_choice'))
     await send_image(update, context, context.user_data.get('usr_choice'))
@@ -86,6 +94,7 @@ async def gpt_talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # talk to the famous person
 async def talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Разговор с известным человеком начало"""
+
     context.user_data['usr_choice'] = 'talk'
     text = load_message(context.user_data['usr_choice'])
     await send_image(update, context, context.user_data['usr_choice'])
@@ -97,6 +106,7 @@ async def talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # CallbackHandler для меню talk
 async def talk_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ Разговор с известным человеком обработчик"""
+
     if context.user_data['usr_choice'] != 'talk':
         return
     await update.callback_query.answer()
@@ -110,6 +120,7 @@ async def talk_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # stop
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик команды /stop"""
+
     context.user_data.clear()
     await update.callback_query.answer()
     await start(update, context)
@@ -127,6 +138,7 @@ app.add_handler(CommandHandler('talk', talk))
 app.add_handler(CallbackQueryHandler(random_buttons, pattern='random_more'))
 app.add_handler(CallbackQueryHandler(talk_buttons, pattern='^talk_.*'))
 app.add_handler(CallbackQueryHandler(stop, pattern='stop'))
+
 
 # Conversation handler for quiz command
 CHOOSE_THEME, ASK_QUESTION, HANDLE_ANSWER, MENU_OPTIONS = range(4)
@@ -205,14 +217,13 @@ async def menu_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await start(update, context)
     return ConversationHandler.END
 
+app.add_handler(advice_conv_handler)
 
 # quiz СonversationHandler состояния
 app.add_handler(ConversationHandler(
     entry_points=[CommandHandler('quiz', start_quiz)],
     states={
-        CHOOSE_THEME: [CallbackQueryHandler(choose_theme, pattern='^quiz_.*'),
-                       CallbackQueryHandler(ask_theme, pattern='^quiz_.*')
-                       ],
+        CHOOSE_THEME: [CallbackQueryHandler(choose_theme, pattern='^quiz_.*')],
         ASK_QUESTION: [MessageHandler(filters.TEXT & ~filters.COMMAND,
                                       ask_question)],
         HANDLE_ANSWER: [MessageHandler(filters.TEXT & ~filters.COMMAND,

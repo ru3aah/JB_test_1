@@ -18,7 +18,6 @@ def dialog_user_info_to_str(user_data) -> str:
 async def send_text(update: Update, context: ContextTypes.DEFAULT_TYPE,
                     text: str) -> Message:
     """
-
     :rtype: object
     """
     if text.count('_') % 2 != 0:
@@ -80,13 +79,13 @@ async def send_image(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 # отображает команду и главное меню
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE,
-                         commands: dict):
+                         commands: dict) -> object:
     command_list = [BotCommand(key, value) for key, value in commands.items()]
-    await context.bot.set_my_commands(command_list, scope=BotCommandScopeChat(
-        chat_id=update.effective_chat.id))
+    await context.bot.set_my_commands(command_list,
+                                      scope=BotCommandScopeChat(
+                                          chat_id=update.effective_chat.id))
     await context.bot.set_chat_menu_button(menu_button=MenuButtonCommands(),
                                            chat_id=update.effective_chat.id)
-
 
 # Удаляем команды для конкретного чата
 async def hide_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
