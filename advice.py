@@ -1,7 +1,9 @@
 from telegram import Update
-from telegram.ext import (ApplicationBuilder, CallbackQueryHandler,
+from telegram.ext import (CallbackQueryHandler,
                           ContextTypes, CommandHandler, MessageHandler, filters,
                           ConversationHandler)
+
+from bot import stop
 from util import default_callback_handler, send_image, send_text, \
     send_text_buttons, load_message, load_prompt
 
@@ -24,7 +26,7 @@ async def advice_entry(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
 async def cat_request(update: Update,
                       context: ContextTypes.DEFAULT_TYPE) -> object:
-    """Requests the user to choose an entertainment category
+    """ Requests the user to choose an entertainment category
     and provides the keys
     """
     context.user_data['usr_mode'] = 'advice_cat'
@@ -35,20 +37,25 @@ async def cat_request(update: Update,
 
 
 async def cat_handler(update: Update, context:ContextTypes.DEFAULT_TYPE):
-    """Handles category choice"""
+    """ Handles category choice """
+
     await update.callback_query.answer()
+
     # Читаем кнопки и команды меню из соответствующего файла
     key_value_pairs = {}
     with open(f'resources/Menus/{context.user_data['usr_mode']}', "r",
               encoding="utf-8") as file:
         for line in file:
+
             # Убираем лишние пробелы и перевод строки
             line = line.strip()
+
             # Разбиваем строку на key и value по разделителю ":"
             if ":" in line:
                 key, value = map(str.strip, line.split(":",1))
                 key_value_pairs[key] = value
     key = update.callback_query.data
+
     # присваиваем свойству пользователя значение надписи нажатой кнопки
     if key in key_value_pairs:
         context.user_data['category'] = key_value_pairs[key]
@@ -57,8 +64,8 @@ async def cat_handler(update: Update, context:ContextTypes.DEFAULT_TYPE):
 
 
 async def genre_request(update: Update, context:ContextTypes.DEFAULT_TYPE ):
-    """Requests the user to provide a desired genre to look in
-    """
+    """ Requests user to provide a desired genre to look in """
+
     context.user_data['usr_mode'] = 'advice_genre'
     text = load_message(context.user_data['usr_mode'])
     await send_text(update, context, text)
@@ -74,14 +81,12 @@ async def genre_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     advice_prompt = load_prompt(context.user_data['usr_choice'])
     advice_prompt = '. '.join([advice_prompt, context.user_data['category'],
                                context.user_data['genre']])
-    print(advice_prompt)
     context.user_data['prompt'] = advice_prompt
     await advice_ask_gpt(update, context)
-    return ADVICE_GENRE
+    return ADVICE_PREFS
 
 async def advice_ask_gpt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Update prompt and Send request to GPT"""
-    print(context.user_data['prompt'])
     pass
 
 
@@ -107,7 +112,6 @@ advice_conv_handler = ConversationHandler(
                                       genre_handler)],
         ADVICE_PREFS: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_prefs)]
     },
-    fallbacks=[CommandHandler('stop', default_callback_handler)]
-
+    fallbacks=[CommandHandler('stop', stop)]
 )
 
