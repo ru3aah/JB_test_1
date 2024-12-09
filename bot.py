@@ -4,7 +4,7 @@ from telegram.ext import (ApplicationBuilder, CallbackQueryHandler,
                           ContextTypes, CommandHandler, MessageHandler, filters,
                           ConversationHandler)
 
-from advice import (advice_conv_handler, ADVICE_CAT, ADVICE_GENRE, ADVICE_PREFS)
+from advice import (advice_conv_handler, ADVICE_CAT, ADVICE_GENRE, ADVICE_RECOMMEND)
 from config import TG_TOKEN
 from config import chat_gpt
 from util import (load_message, send_text, send_image, show_main_menu,
@@ -224,8 +224,7 @@ app.add_handler(ConversationHandler(
                                       ask_question)],
         HANDLE_ANSWER: [MessageHandler(filters.TEXT & ~filters.COMMAND,
                                        handle_answer),
-                        CallbackQueryHandler(menu_options, pattern='^quiz_.*')
-                        ],
+                        CallbackQueryHandler(menu_options, pattern='^quiz_.*')],
         MENU_OPTIONS: [CallbackQueryHandler(menu_options, pattern='^quiz_.*')]
     },
     fallbacks=[CommandHandler('stop', stop)]))

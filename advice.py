@@ -15,6 +15,8 @@ async def advice_entry(update: Update, context:ContextTypes.DEFAULT_TYPE):
     context.user_data['category'] = ''
     context.user_data['genre'] = ''
     context.user_data['prompt'] = ''
+    context.user_data['last_recommendation'] = []
+    context.user_data['assessed_dict'] = {}
     text = load_message(context.user_data['usr_choice'])
     await send_image(update, context, context.user_data['usr_choice'])
     await send_text(update, context, text)
@@ -84,7 +86,7 @@ async def genre_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['prompt'] = advice_prompt
     await advice_ask_gpt(update, context)
 
-    return ADVICE_PREFS
+    return ADVICE_RECOMMEND
 
 async def advice_ask_gpt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ Send request to GPT and get recommendation"""
@@ -99,33 +101,64 @@ async def advice_ask_gpt(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             f'{context.user_data["category"]}  '
                             f'в жанре {context.user_data["genre"]}:')
     await send_text(update, context, recommendation)
+    rec_list = list(recommendation.split('\n'))
+    context.user_data['last_recommendation'] = rec_list
     await send_text_buttons(update, context,'Что будем делать дальше?',
                         context.user_data['usr_mode'])
-    return ADVICE_PREFS
+
+    return ADVICE_RECOMMEND
 
 async def ask_query_handler(update: Update, context:
 ContextTypes.DEFAULT_TYPE):
     """ Handles user choice upon receiving recommendation list"""
+
     await update.callback_query.answer()
     key = update.callback_query.data
     if key == 'advice_more':
         return await advice_more(update, context)
     elif key == 'advice_stop':
         await advice_stop(update, context)
-    return ADVICE_PREFS
 
+        return ConversationHandler.END
+
+    return ADVICE_MORE
 
 
 async def advice_more(update: Update, context:ContextTypes.DEFAULT_TYPE):
-    """Provides advices alongside with keys like/dislike
-    """
-    pass
+    """ Receives like/dislike on """
+
+    context.user_data['usr_mode'] = 'advice_more'
+    await send_text(update, context, load_message(context.user_data[
+                                                      'usr_mode']))
+    context.user_data['current'] = ''
+    for key in context.user_data['last_recommendation']:
+        context.user_data['current'] = str(key)
+        await send_text_buttons(update, context, str(key),
+                                context.user_data['usr_mode'])
+
+    return ADVICE_MORE
 
 
-async def handle_prefs(update: Update, context:ContextTypes.DEFAULT_TYPE):
-    """handles user preferences and develop updated list
-    """
-    pass
+async def more_handler(update: Update, context:ContextTypes.DEFAULT_TYPE):
+    """ handles user preferences and develop updated list of recommendations """
+    print('in more_handler')
+    await update.callback_query.answer()
+    user_choice  = update.callback_query.data
+    print(user_choice)
+    assessed_dict = context.user_data['assessed_dict']
+    print(assessed_dict)
+    if user_choice == 'advice_more_like':
+        assessed_dict[context.user_data['current']] = 'Нравится.'
+        context.user_data['assessed_dict'] = assessed_dict
+    elif user_choice == 'advice_more_dislike':
+        assessed_dict[context.user_data['current']] = 'Не нравится.'
+        context.user_data['assessed_dict'] = assessed_dict
+    elif user_choice == 'advice_more_stop':
+        assessed_dict[context.user_data['current']] = 'Не знаю.'
+        context.user_data['assessed_dict'] = assessed_dict
+    print(assessed_dict)
+
+    return ADVICE_MORE
 
 async def advice_stop(update: Update, context:ContextTypes.DEFAULT_TYPE):
     """ finishes conversation """
@@ -135,7 +168,7 @@ async def advice_stop(update: Update, context:ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 # ConversationHandler for advice
-ADVICE_CAT, ADVICE_GENRE, ADVICE_PREFS = range(3)
+ADVICE_CAT, ADVICE_GENRE, ADVICE_RECOMMEND, ADVICE_MORE = range(4)
 
 advice_conv_handler = ConversationHandler(
     entry_points=[CommandHandler('advice', advice_entry)],
@@ -143,10 +176,10 @@ advice_conv_handler = ConversationHandler(
         ADVICE_CAT: [CallbackQueryHandler(cat_handler, pattern='^advice_.*')],
         ADVICE_GENRE: [MessageHandler(filters.TEXT & ~filters.COMMAND,
                                       genre_handler)],
-        ADVICE_PREFS: [MessageHandler(filters.TEXT & ~filters.COMMAND,
-                                      handle_prefs),
-                       CallbackQueryHandler(ask_query_handler,
-                                            pattern='^advice_.*')]
+        ADVICE_RECOMMEND: [CallbackQueryHandler(ask_query_handler,
+                                                pattern='^advice_.*')],
+        ADVICE_MORE: [CallbackQueryHandler(more_handler,
+                                           pattern='^advice_more.*')]
     },
     fallbacks=[CommandHandler('stop', default_callback_handler)],
     allow_reentry=True,
