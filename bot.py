@@ -22,14 +22,12 @@ logger = logging.getLogger(__name__)
 # Commands
 # start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Выводит главное меню"""
+    """ Выводит главное меню """
 
     context.user_data['usr_choice'] = 'main'
     text = load_message(context.user_data['usr_choice'])
     await send_image(update, context, context.user_data['usr_choice'])
     await send_text(update, context, text)
-    print('i am here')
-
     await show_main_menu(update, context,{
         'start': 'Главное меню',
         'random': 'Узнать случайный интересный факт 🧠',
@@ -99,8 +97,7 @@ async def talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = load_message(context.user_data['usr_choice'])
     await send_image(update, context, context.user_data['usr_choice'])
     await send_text_buttons(update, context, text,
-                            context.user_data['usr_choice']
-                            )
+                            context.user_data['usr_choice'])
 
 
 # CallbackHandler для меню talk
@@ -117,14 +114,12 @@ async def talk_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_text(update, context, greet)
 
 
-# stop
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработчик команды /stop"""
-
-    context.user_data.clear()
     await update.callback_query.answer()
+    context.user_data.clear()
+    context.user_data['usr_choice'] = 'main'
     await start(update, context)
-
+    return ConversationHandler.END
 
 app = ApplicationBuilder().token(TG_TOKEN).build()
 
@@ -137,8 +132,6 @@ app.add_handler(CommandHandler('talk', talk))
 # Callback Handlers
 app.add_handler(CallbackQueryHandler(random_buttons, pattern='random_more'))
 app.add_handler(CallbackQueryHandler(talk_buttons, pattern='^talk_.*'))
-app.add_handler(CallbackQueryHandler(stop, pattern='stop'))
-
 
 # Conversation handler for quiz command
 CHOOSE_THEME, ASK_QUESTION, HANDLE_ANSWER, MENU_OPTIONS = range(4)
@@ -146,15 +139,16 @@ CHOOSE_THEME, ASK_QUESTION, HANDLE_ANSWER, MENU_OPTIONS = range(4)
 
 # Quiz functions
 async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """инициация квиза"""
+    """ инициация квиза """
     context.user_data['usr_choice'] = 'quiz'
     context.user_data['prompt'] = load_prompt(context.user_data['usr_choice'])
     context.user_data['score'] = 0
     context.user_data['questions'] = 0
+    context.user_data['chosen_theme'] = ''
     await send_image(update, context, context.user_data['usr_choice'])
     await ask_theme(update, context)
-    return CHOOSE_THEME
 
+    return CHOOSE_THEME
 
 # Запрос темы
 async def ask_theme(update, context):
@@ -165,13 +159,13 @@ async def ask_theme(update, context):
                             )
     return CHOOSE_THEME
 
-
 # Выбор темы
 async def choose_theme(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обрабатывает выбор темы """
     await update.callback_query.answer()
     context.user_data['chosen_theme'] = update.callback_query.data
     await ask_question(update, context)
+
     return HANDLE_ANSWER
 
 
@@ -183,6 +177,7 @@ async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                             )
     context.user_data['questions'] += 1
     await send_text(update, context, question)
+
     return HANDLE_ANSWER
 
 
@@ -214,7 +209,8 @@ async def menu_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return await ask_theme(update, context)
     await send_text(update, context, 'Спасибо за участие в квизе!')
     context.user_data.clear()
-    await start(update, context)
+    await stop(update, context)
+
     return ConversationHandler.END
 
 app.add_handler(advice_conv_handler)
@@ -234,11 +230,15 @@ app.add_handler(ConversationHandler(
     },
     fallbacks=[CommandHandler('stop', stop)]))
 
+
 #Message Handler
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,
                                message_handler))
 
+
+
 #Default CallBack handler
 app.add_handler(CallbackQueryHandler(default_callback_handler))
+app.add_handler(CallbackQueryHandler(stop))
 
 app.run_polling()

@@ -117,6 +117,7 @@ async def default_callback_handler(update: Update,
     await send_html(update, context,
                     f"You have pressed button with {query} callback")
 
+
 #интерфейс с chat gpt
 async def gpt_dialog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ Принимает сообщение пользователя,
