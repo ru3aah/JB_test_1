@@ -155,8 +155,8 @@ async def ask_theme(update, context):
     """Выводит начальное меню квиза с кнопками выбора тем"""
     await send_text_buttons(update, context,
                             load_message(context.user_data['usr_choice']),
-                            context.user_data['usr_choice']
-                            )
+                            context.user_data['usr_choice'])
+
     return CHOOSE_THEME
 
 # Выбор темы
@@ -173,8 +173,7 @@ async def choose_theme(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Генерирует и задает вопрос"""
     question = await chat_gpt.send_question(context.user_data['prompt'],
-                                            context.user_data['chosen_theme']
-                                            )
+                                            context.user_data['chosen_theme'])
     context.user_data['questions'] += 1
     await send_text(update, context, question)
 
@@ -195,6 +194,7 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             f'{context.user_data['questions']}\n'
                             'Что вы хотите делать дальше?',
                             'quiz_answer_options')
+
     return MENU_OPTIONS
 
 

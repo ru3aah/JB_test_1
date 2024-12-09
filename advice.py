@@ -20,6 +20,8 @@ async def advice_entry(update: Update, context:ContextTypes.DEFAULT_TYPE):
     await send_text(update, context, text)
     await cat_request(update, context)
 
+    return ADVICE_CAT
+
 
 async def cat_request(update: Update,
                       context: ContextTypes.DEFAULT_TYPE) -> object:
@@ -30,8 +32,7 @@ async def cat_request(update: Update,
     text = load_message(context.user_data['usr_mode'])
     await send_text_buttons(update, context, text,
                             context.user_data['usr_mode'])
-    #await cat_handler(update, context)
-    print('1')
+
     return ADVICE_CAT
 
 
@@ -55,6 +56,7 @@ async def cat_handler(update: Update, context:ContextTypes.DEFAULT_TYPE):
     if key in key_value_pairs:
         context.user_data['category'] = key_value_pairs[key]
     await genre_request(update, context)
+
     return ADVICE_GENRE
 
 
@@ -64,6 +66,7 @@ async def genre_request(update: Update, context:ContextTypes.DEFAULT_TYPE ):
     context.user_data['usr_mode'] = 'advice_genre'
     text = load_message(context.user_data['usr_mode'])
     await send_text(update, context, text)
+
     return ADVICE_GENRE
 
 
@@ -80,6 +83,7 @@ async def genre_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                context.user_data['genre']])
     context.user_data['prompt'] = advice_prompt
     await advice_ask_gpt(update, context)
+
     return ADVICE_PREFS
 
 async def advice_ask_gpt(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -90,11 +94,10 @@ async def advice_ask_gpt(update: Update, context: ContextTypes.DEFAULT_TYPE):
     request = ''
     message = await send_text(update, context,
                   'Thinking...')
-    print(prompt, request)
     recommendation  = await chat_gpt.send_question(prompt, request)
-    print(recommendation)
     await message.edit_text(f'Вот что я могу порекомендовать в категории '
-                            f'{context.user_data["category"]}  в жанре {context.user_data["genre"]}:')
+                            f'{context.user_data["category"]}  '
+                            f'в жанре {context.user_data["genre"]}:')
     await send_text(update, context, recommendation)
     await send_text_buttons(update, context,'Что будем делать дальше?',
                         context.user_data['usr_mode'])
