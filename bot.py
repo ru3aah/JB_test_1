@@ -15,7 +15,7 @@ from util import (load_message, send_text, send_image, show_main_menu,
 # logging setup
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - '
                            '%(message)s',
-                    level=logging.INFO)
+                    level=logging.DEBUG)
 logging.getLogger('httpx').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
