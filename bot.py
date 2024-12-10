@@ -43,7 +43,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик выбора пользователя и запуск обработчика"""
 
-    match context.user_data['usr_choice']:
+    match (context.user_data['usr_choice']):
         case 'main':
             await start(update, context)
         case 'random':
@@ -116,6 +116,8 @@ async def talk_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """ stop function """
+    """
     await update.callback_query.answer()
     context.user_data.clear()
     context.user_data['usr_choice'] = 'main'
