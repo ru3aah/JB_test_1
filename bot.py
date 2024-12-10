@@ -4,7 +4,8 @@ from telegram.ext import (ApplicationBuilder, CallbackQueryHandler,
                           ContextTypes, CommandHandler, MessageHandler, filters,
                           ConversationHandler)
 
-from advice import (advice_conv_handler, ADVICE_CAT, ADVICE_GENRE, ADVICE_RECOMMEND)
+from advice import (advice_conv_handler, ADVICE_CAT, ADVICE_GENRE,
+                    ADVICE_RECOMMEND, initialize_user_data, cat_request)
 from config import TG_TOKEN
 from config import chat_gpt
 from util import (load_message, send_text, send_image, show_main_menu,
@@ -36,13 +37,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'quiz': 'Поучаствовать в квизе ❓',
         'advice': 'Получить совет по выбору фильма, сериала или книги'
     })
-
+    return ConversationHandler.END
 
 # message handler
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик выбора пользователя и запуск обработчика"""
 
-    match context.user_data.get('usr_choice'):
+    match context.user_data['usr_choice']:
         case 'main':
             await start(update, context)
         case 'random':
@@ -213,6 +214,7 @@ async def menu_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return ConversationHandler.END
 
+
 app.add_handler(advice_conv_handler)
 
 # quiz СonversationHandler состояния
@@ -235,9 +237,12 @@ app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,
                                message_handler))
 
 
+# stop CallbackQueryHandler
+app.add_handler(CallbackQueryHandler(stop))
+
 
 #Default CallBack handler
 app.add_handler(CallbackQueryHandler(default_callback_handler))
-app.add_handler(CallbackQueryHandler(stop))
+
 
 app.run_polling()

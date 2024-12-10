@@ -79,13 +79,14 @@ async def send_image(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 # отображает команду и главное меню
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE,
-                         commands: dict) -> object:
+                         commands: dict):
     command_list = [BotCommand(key, value) for key, value in commands.items()]
     await context.bot.set_my_commands(command_list,
                                       scope=BotCommandScopeChat(
                                           chat_id=update.effective_chat.id))
     await context.bot.set_chat_menu_button(menu_button=MenuButtonCommands(),
                                            chat_id=update.effective_chat.id)
+
 
 # Удаляем команды для конкретного чата
 async def hide_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -122,13 +123,10 @@ async def default_callback_handler(update: Update,
 async def gpt_dialog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ Принимает сообщение пользователя,
      дополняет им запрос к chat gpt с заранее установленным промптом,
-     получает на него ответ и выводит его с меню"""
+     получает на него ответ и выводит его с меню """
 
     request = update.message.text
     message = await send_text(update, context, 'Thinking...')
     answer = await chat_gpt.add_message(request)
     await message.delete()
     await send_text_buttons(update, context, answer, 'gpt_dialog')
-
-
-
