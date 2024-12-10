@@ -1,11 +1,11 @@
 import logging
+
 from telegram import Update
 from telegram.ext import (ApplicationBuilder, CallbackQueryHandler,
                           ContextTypes, CommandHandler, MessageHandler, filters,
                           ConversationHandler)
 
-from advice import (advice_conv_handler, ADVICE_CAT, ADVICE_GENRE,
-                    ADVICE_RECOMMEND, initialize_user_data, cat_request)
+from advice import (advice_conv_handler)
 from config import TG_TOKEN
 from config import chat_gpt
 from util import (load_message, send_text, send_image, show_main_menu,
@@ -15,7 +15,7 @@ from util import (load_message, send_text, send_image, show_main_menu,
 # logging setup
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - '
                            '%(message)s',
-                    level=logging.DEBUG)
+                    level=logging.INFO)
 logging.getLogger('httpx').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
@@ -117,7 +117,6 @@ async def talk_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ stop function """
-    """
     await update.callback_query.answer()
     context.user_data.clear()
     context.user_data['usr_choice'] = 'main'
@@ -155,7 +154,7 @@ async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Запрос темы
 async def ask_theme(update, context):
-    """Выводит начальное меню квиза с кнопками выбора тем"""
+    """ Выводит начальное меню квиза с кнопками выбора тем """
     await send_text_buttons(update, context,
                             load_message(context.user_data['usr_choice']),
                             context.user_data['usr_choice'])
