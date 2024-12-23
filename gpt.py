@@ -1,3 +1,20 @@
+"""
+gpt.py
+------
+
+This module implements functionality related to GPT models.
+It can be used to interact with GPT APIs, process text inputs, and generate
+meaningful outputs using AI-driven natural language processing.
+
+Modules and functionality:
+- Communication with GPT API endpoints
+- Sending prompts and receiving responses
+- Text preprocessing and result formatting
+- Error handling for API interactions
+
+    print(response)
+"""
+
 import httpx as httpx
 from openai import OpenAI
 

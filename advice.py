@@ -1,7 +1,24 @@
+"""
+advice.py
+---------
+
+This module provides functionality for generating, managing, and delivering
+advice.
+It serves as a core component for offering recommendations or suggestions based
+on user input, predefined rules, or AI-powered logic.
+
+Modules and functionality:
+- Fetching advice from external or internal sources
+- Generating personalized advice based on input parameters
+- Managing categories or types of advice (e.g., motivational, technical, general)
+- Formatting advice for display or delivery
+
+"""
+
 from telegram import Update
 
 from config import chat_gpt
-from util import (default_callback_handler, send_image, send_text,
+from util import (send_image, send_text,
                   send_text_buttons, load_message, load_prompt)
 from telegram.ext import (CallbackQueryHandler, ContextTypes, CommandHandler,
                           MessageHandler, filters, ConversationHandler)

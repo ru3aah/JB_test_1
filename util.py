@@ -1,3 +1,22 @@
+"""
+util.py
+-------
+
+This module provides utility and helper functions for the `bot.py` module.
+These service functions are designed to support the bot's primary logic by
+handling tasks such as input validation, data formatting, and common operations.
+
+Modules and functionality:
+- Text processing and formatting
+- Validation of user inputs and API responses
+- Error handling and logging
+- Helper functions to support bot-specific logic
+
+Usage:
+------
+This module is not standalone.
+"""
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Message, \
     BotCommand, MenuButtonCommands, BotCommandScopeChat, MenuButtonDefault
 from telegram import Update
@@ -119,7 +138,6 @@ async def default_callback_handler(update: Update,
                     f"You have pressed button with {query} callback")
 
 
-#интерфейс с chat gpt
 async def gpt_dialog(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ Принимает сообщение пользователя,
      дополняет им запрос к chat gpt с заранее установленным промптом,

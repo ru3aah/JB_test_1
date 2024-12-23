@@ -1,3 +1,31 @@
+"""
+bot.py
+-------
+
+This module provides the main logic for implementing a bot application.
+It includes function definitions and classes for handling bot interactions,
+responses, and processing user inputs.
+
+Modules and functionality:
+- Command processing
+- Event handling (e.g., chat messages or API calls)
+- Response generation
+- Integration with external APIs or services
+
+Usage:
+------
+Import this module and initialize the bot via its corresponding setup functions
+or classes. Ensure any required third-party packages are installed beforehand.
+
+Dependencies:
+-------------
+- Python 3.12 or later
+- ref to dependencies.txt
+
+Author: Alexander Telenkov
+
+"""
+
 import logging
 
 from telegram import Update
@@ -21,9 +49,21 @@ logger = logging.getLogger(__name__)
 
 
 # Commands
-# start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """ Выводит главное меню """
+    """
+    Asynchronous function to initiate a conversation with the user.
+
+    This function sets the user's initial choice within the context, retrieves
+    a corresponding message, and sends it as both an image and textual response.
+    Finally, it displays the main menu with various interaction options.
+
+    Parameters:
+    - update: Update object containing information about the incoming update.
+    - context: Context object containing user-specific data and bot interaction data.
+
+    Returns:
+    - ConversationHandler.END: Indicates that the conversation handler should terminate.
+    """
 
     context.user_data['usr_choice'] = 'main'
     text = load_message(context.user_data['usr_choice'])
@@ -39,7 +79,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     })
     return ConversationHandler.END
 
-# message handler
+
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик выбора пользователя и запуск обработчика"""
 
@@ -54,7 +94,6 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await gpt_dialog(update, context)
 
 
-# random fact
 async def random_fact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Генерирует случайный факт и показывает его пользователю"""
 
@@ -68,7 +107,6 @@ async def random_fact(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             context.user_data['usr_choice'])
 
 
-# CallbackHandler для меню random_fact
 async def random_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик нажатия кнопок в меню random_fact"""
 
@@ -78,7 +116,6 @@ async def random_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await random_fact(update, context)
 
 
-# gpt talk
 async def gpt_talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Разговор с gpt начало"""
 
@@ -90,7 +127,6 @@ async def gpt_talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_gpt.set_prompt(prompt)
 
 
-# talk to the famous person
 async def talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Разговор с известным человеком начало"""
 
@@ -101,7 +137,6 @@ async def talk(update: Update, context: ContextTypes.DEFAULT_TYPE):
                             context.user_data['usr_choice'])
 
 
-# CallbackHandler для меню talk
 async def talk_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ Разговор с известным человеком обработчик"""
 
@@ -123,23 +158,23 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await start(update, context)
     return ConversationHandler.END
 
+
 app = ApplicationBuilder().token(TG_TOKEN).build()
 
-# Command Handlers
+
 app.add_handler(CommandHandler('start', start))
 app.add_handler(CommandHandler('random', random_fact))
 app.add_handler(CommandHandler('gpt', gpt_talk))
 app.add_handler(CommandHandler('talk', talk))
 
-# Callback Handlers
+
 app.add_handler(CallbackQueryHandler(random_buttons, pattern='random_more'))
 app.add_handler(CallbackQueryHandler(talk_buttons, pattern='^talk_.*'))
 
-# Conversation handler for quiz command
+
 CHOOSE_THEME, ASK_QUESTION, HANDLE_ANSWER, MENU_OPTIONS = range(4)
 
 
-# Quiz functions
 async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """ инициация квиза """
     context.user_data['usr_choice'] = 'quiz'
@@ -152,7 +187,7 @@ async def start_quiz(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return CHOOSE_THEME
 
-# Запрос темы
+
 async def ask_theme(update, context):
     """ Выводит начальное меню квиза с кнопками выбора тем """
     await send_text_buttons(update, context,
@@ -161,7 +196,7 @@ async def ask_theme(update, context):
 
     return CHOOSE_THEME
 
-# Выбор темы
+
 async def choose_theme(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обрабатывает выбор темы """
     await update.callback_query.answer()
@@ -171,7 +206,6 @@ async def choose_theme(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return HANDLE_ANSWER
 
 
-# Задает вопрос на тему
 async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Генерирует и задает вопрос"""
     question = await chat_gpt.send_question(context.user_data['prompt'],
@@ -182,7 +216,6 @@ async def ask_question(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return HANDLE_ANSWER
 
 
-# Принимает ответ пользователя, получает оценку от GPT, запрашивает, что дальше
 async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Принимает и оценивает ответ, предлагает выбор дальше"""
     user_answer = update.message.text
@@ -200,7 +233,6 @@ async def handle_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return MENU_OPTIONS
 
 
-# Обрабатывает выбор после ответа на вопрос и вызывает обработчики
 async def menu_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обрабатывает выбор пользователя после ответа на вопрос квиза"""
     await update.callback_query.answer()
@@ -218,7 +250,7 @@ async def menu_options(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 app.add_handler(advice_conv_handler)
 
-# quiz СonversationHandler состояния
+
 app.add_handler(ConversationHandler(
     entry_points=[CommandHandler('quiz', start_quiz)],
     states={
@@ -233,16 +265,13 @@ app.add_handler(ConversationHandler(
     fallbacks=[CommandHandler('stop', stop)]))
 
 
-#Message Handler
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,
                                message_handler))
 
 
-# stop CallbackQueryHandler
 app.add_handler(CallbackQueryHandler(stop))
 
 
-#Default CallBack handler
 app.add_handler(CallbackQueryHandler(default_callback_handler))
 
 
